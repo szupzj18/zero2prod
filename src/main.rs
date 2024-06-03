@@ -1,4 +1,4 @@
-use actix_web::{ web, App, HttpResponse, HttpServer, Responder };
+use actix_web::{ web, App, HttpRequest, HttpResponse, HttpServer, Responder };
 
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
@@ -11,7 +11,12 @@ async fn main() -> Result<(), std::io::Error> {
     .await
 }
 
-async fn index() -> impl Responder {
-    // WIP: indexing
-    HttpResponse::Ok().finish()
+async fn index(req: HttpRequest) -> impl Responder {
+    let name = req.match_info().get("name").unwrap_or("World");
+    println!("recieved from req uri: {}, method {}", req.path(), req.method());
+    format!("Hello, {}!", &name)
+}
+
+async fn health_check () {
+    todo!()
 }
