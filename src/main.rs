@@ -1,16 +1,17 @@
-use actix_web::{ HttpServer, web, App };
+use actix_web::{ web, App, HttpResponse, HttpServer, Responder };
 
 #[tokio::main]
-async fn main() -> Result<(), Error> {
+async fn main() -> Result<(), std::io::Error> {
     HttpServer::new( || 
         App::new()
             .route("/", web::get().to(index)) // default route endpoint
+            .route("/{name}", web::get().to(index))
     ).bind("127.0.0.1:8080")?
     .run()
     .await
 }
 
-async fn index() {
+async fn index() -> impl Responder {
     // WIP: indexing
-    "Hello, world!"
+    HttpResponse::Ok().finish()
 }
