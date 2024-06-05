@@ -1,13 +1,15 @@
+use std::net::TcpListener;
+
 use actix_web::{dev::Server, web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 
-pub fn run(address: &str) -> Result<Server, std::io::Error> {
+pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
     let server = HttpServer::new( || 
         App::new()
             .route("/health_check", web::get().to(health_check))
             .route("/", web::get().to(index)) // default route endpoint
             .route("/{name}", web::get().to(index))
     )
-    .bind(address)?
+    .listen(listener)?
     .run();
     Ok(server)
 }
