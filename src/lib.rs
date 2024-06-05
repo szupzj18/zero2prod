@@ -1,15 +1,15 @@
-use actix_web::{HttpResponse, HttpServer, App, web, Responder, HttpRequest};
+use actix_web::{dev::Server, web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 
-pub async fn run() -> Result<(), std::io::Error> {
-    HttpServer::new( || 
+pub fn run(address: &str) -> Result<Server, std::io::Error> {
+    let server = HttpServer::new( || 
         App::new()
             .route("/health_check", web::get().to(health_check))
             .route("/", web::get().to(index)) // default route endpoint
             .route("/{name}", web::get().to(index))
     )
-    .bind("127.0.0.1:8080")?
-    .run()
-    .await
+    .bind(address)?
+    .run();
+    Ok(server)
 }
 
 async fn health_check () -> HttpResponse {

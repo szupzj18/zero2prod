@@ -1,17 +1,12 @@
-
-#[tokio::test]
-async fn dummy_test() {
-    assert_eq!(2 + 2, 4);
-}
-
-async fn spawn_app() -> Result<(), std::io::Error> {
-    zero2prod::run().await
+fn spawn_app() {
+    let server = zero2prod::run("127.0.0.1:8000").expect("Failed to bind address");
+    let _ = tokio::spawn(server);
 }
 
 #[tokio::test]
 async fn health_check_works() {
     // Arrange
-    spawn_app().await.expect("Failed to spawn our app.");
+    spawn_app();
     let client = reqwest::Client::new();
 
     let resp = client.get("http://127.0.0.1:8080/health_check")
