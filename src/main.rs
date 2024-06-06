@@ -5,5 +5,5 @@ use zero2prod::run;
 
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
-    run(TcpListener::bind("127.0.0.1:0")?)?.await
+    run(TcpListener::bind("127.0.0.1:8080")?)?.await
 }
