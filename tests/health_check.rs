@@ -1,15 +1,15 @@
 use std::net::TcpListener;
-use sqlx::{Connection, PgConnection};
+use sqlx::{Connection, PgConnection, PgPool};
 use zero2prod::{configuration::get_configuration, startup};
 
 async fn spawn_app() -> String {
     let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind address.");
     let port = listener.local_addr().unwrap().port();
     let configuration = get_configuration().expect("failed to load config.");
-    let connection = PgConnection::connect(&configuration.database.connection_string())
+    let pool = PgPool::connect(&configuration.database.connection_string())
         .await
         .expect("Failed to connect to Postgres.");
-    let server = startup::run(listener, connection).expect("Failed to bind address.");
+    let server = startup::run(listener, pool).expect("Failed to bind address.");
     let _ = tokio::spawn(server);
     format!("http://127.0.0.1:{}", port)
 }
