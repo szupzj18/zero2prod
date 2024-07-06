@@ -1,5 +1,5 @@
 use std::net::TcpListener;
-use sqlx::{Connection, PgConnection, PgPool};
+use sqlx::{PgPool};
 use zero2prod::configuration::{get_configuration};
 use zero2prod::startup;
 use Result;
