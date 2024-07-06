@@ -1,34 +1,36 @@
-use std::net::TcpListener;
-use actix_web::{dev::Server, web::{self, Form}, App, HttpRequest, HttpResponse, HttpServer, Responder};
+pub mod routes;
+pub mod configuration;
+pub mod startup;
+use actix_web::{ web::{self}, HttpResponse };
+use sqlx::{PgConnection, PgPool};
 
 #[derive(serde::Deserialize)]
-struct FormData {
+pub struct FormData {
     name: String,
     email: String,
 }
 
-pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
-    let server = HttpServer::new( || 
-        App::new()
-            .route("/health_check", web::get().to(health_check))
-            .route("/subscriptions", web::post().to(subscribe))
-            .route("/", web::get().to(index)) // default route endpoint
-            .route("/{name}", web::get().to(index))
+pub async fn health_check() -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
+
+pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> HttpResponse {
+    sqlx::query!(
+        r#"
+        INSERT INTO subscriptions (id, email, name, subscribed_at)
+        VALUES ($1, $2, $3, $4)
+        "#,
+        uuid::Uuid::new_v4(),
+        form.email,
+        form.name,
+        chrono::Utc::now()
     )
-    .listen(listener)?
-    .run();
-    Ok(server)
-}
-
-async fn health_check() -> HttpResponse {
+    .execute(pool.get_ref())
+    .await;
     HttpResponse::Ok().finish()
 }
 
-async fn subscribe(_form: web::Form<FormData>) -> HttpResponse {
-    HttpResponse::Ok().finish()
-}
-
-async fn index(form: web::Form<FormData>) -> String {
+pub async fn index(form: web::Form<FormData>) -> String {
     format!("Welcome, {} -- email: {}", form.name,form.email)
 }
 
