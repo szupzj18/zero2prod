@@ -2,7 +2,7 @@ pub mod routes;
 pub mod configuration;
 pub mod startup;
 use actix_web::{ web::{self}, HttpResponse };
-use sqlx::{PgConnection, PgPool};
+use sqlx::{PgPool};
 
 #[derive(serde::Deserialize)]
 pub struct FormData {
@@ -15,7 +15,7 @@ pub async fn health_check() -> HttpResponse {
 }
 
 pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> HttpResponse {
-    sqlx::query!(
+    let _ = sqlx::query!(
         r#"
         INSERT INTO subscriptions (id, email, name, subscribed_at)
         VALUES ($1, $2, $3, $4)
