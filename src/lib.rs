@@ -10,10 +10,6 @@ pub struct FormData {
     email: String,
 }
 
-pub async fn health_check() -> HttpResponse {
-    HttpResponse::Ok().finish()
-}
-
 pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> HttpResponse {
     let _ = sqlx::query!(
         r#"
