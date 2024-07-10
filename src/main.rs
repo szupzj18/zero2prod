@@ -6,6 +6,8 @@ use Result;
 
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
+    env_logger::Builder::from_default_env()
+        .init();
     let configuration = get_configuration().expect("Failed to read configuration.");
     let connection_pool = PgPool::connect(&configuration.database.connection_string())
         .await

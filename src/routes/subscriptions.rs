@@ -3,8 +3,8 @@ use sqlx::{PgPool};
 
 #[derive(serde::Deserialize)]
 pub struct FormData {
-    name: String,
-    email: String,
+    pub(crate) name: String,
+    pub(crate) email: String,
 }
 
 
