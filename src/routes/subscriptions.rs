@@ -1,7 +1,6 @@
 use actix_web::{ web::{self}, HttpResponse };
-use serde::de::value;
 use serde_json::value;
-use sqlx::{PgPool};
+use sqlx::PgPool;
 
 #[derive(serde::Deserialize)]
 pub struct FormData {
