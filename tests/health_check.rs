@@ -1,14 +1,30 @@
 use std::net::TcpListener;
+use secrecy::ExposeSecret;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
+use once_cell::sync::Lazy;
 use uuid::Uuid;
-use zero2prod::{configuration::{get_configuration, Settings}, startup};
+use zero2prod::{configuration::{get_configuration, Settings}, startup, telementary::{get_subscriber, init_subscriber}};
 
 struct TestApp {
     address: String,
     pool: PgPool,
 }
 
+static TRACING: Lazy<()> = Lazy::new(|| {
+    let default_filter_level = "info".into();
+    let name = "test".into();
+    if std::env::var("TEST_LOG").is_ok() {
+        let subscriber = get_subscriber(name,default_filter_level, std::io::stdout);
+        init_subscriber(subscriber);
+    } else {
+        let subscriber = get_subscriber(name,default_filter_level, std::io::sink);
+        init_subscriber(subscriber);
+    }
+});
+
 async fn spawn_app() -> TestApp {
+    Lazy::force(&TRACING);
+
     let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind address.");
     let port = listener.local_addr().unwrap().port();
     let mut configuration = get_configuration().expect("failed to load config.");
@@ -25,7 +41,7 @@ async fn spawn_app() -> TestApp {
 
 async fn configure_database(configuration: Settings) -> PgPool {
     // create a new db for testing.
-    let connection = PgPool::connect(&configuration.database.connection_string_without_db())
+    let connection = PgPool::connect(&configuration.database.connection_string_without_db().expose_secret())
         .await
         .expect("failed to connect to Postgres.");
 
@@ -33,7 +49,7 @@ async fn configure_database(configuration: Settings) -> PgPool {
         .await
         .expect("failed to create db.");
     // connect old db. migration.
-    let conncection_pool = PgPool::connect(&configuration.database.connection_string())
+    let conncection_pool = PgPool::connect(&configuration.database.connection_string().expose_secret())
         .await
         .expect("failed to connect to Postgres.");
     sqlx::migrate!("./migrations")
@@ -57,7 +73,7 @@ async fn health_check_works() {
 
     // Assert
     assert!(resp.status().is_success());
-    assert_eq!(Some(0), resp.content_length());
+    assert_eq!(Some(34), resp.content_length());
 }
 
 // subscribe service test.
@@ -66,7 +82,7 @@ async fn subscribe_returns_a_200_for_valid_from_data() {
     let app = spawn_app().await;
     let configuration = get_configuration().expect("failed to read configuration");
     let connection_string = configuration.database.connection_string();
-    let mut connection = PgConnection::connect(&connection_string) // connect testable db.
+    let mut connection = PgConnection::connect(&connection_string.expose_secret()) // connect testable db.
         .await
         .expect("Failed to connect to Postgres.");
     let client = reqwest::Client::new();

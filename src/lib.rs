@@ -1,16 +1,13 @@
 pub mod routes;
 pub mod configuration;
 pub mod startup;
-use actix_web::{ web, HttpResponse };
+pub mod telementary;
+use actix_web::web;
 
 #[derive(serde::Deserialize)]
 pub struct FormData {
     name: String,
     email: String,
-}
-
-pub async fn health_check() -> HttpResponse {
-    HttpResponse::Ok().finish()
 }
 
 pub async fn index(form: web::Form<FormData>) -> String {
