@@ -2,9 +2,14 @@ use std::net::TcpListener;
 use actix_web::{dev::Server, web::{self}, HttpServer, App};
 use sqlx::PgPool;
 use tracing_actix_web::TracingLogger;
-use crate::routes::{health_check, subscribe};
-use crate::index;
+use crate::routes::{health_check, subscribe, index};
 
+#[tracing::instrument(
+    name = "Starting server",
+    fields(
+        addr = %listener.local_addr().unwrap()
+    )
+)]
 pub fn run(
     listener: TcpListener,
     db_pool: PgPool,

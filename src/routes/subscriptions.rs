@@ -1,8 +1,8 @@
 use actix_web::{web, HttpResponse};
-use sqlx::PgPool;
-use tracing::Instrument;
-use uuid::Uuid;
+use chrono::Utc;
 use serde_json::json;
+use sqlx::PgPool;
+use uuid::Uuid;
 
 #[derive(serde::Deserialize)]
 pub struct FormData {
@@ -20,14 +20,14 @@ pub struct FormData {
     )
 )]
 pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> HttpResponse {
-    let request_span = tracing::info_span!("adding a new subscriber",);
+    match insert_subsciber(&pool, &form).await {
+        Ok(_) => HttpResponse::Ok().json(json!({ "message": "Thanks for subscribing!" })),
+        Err(_) => HttpResponse::InternalServerError().finish()
+    }
+}
 
-    // enter the span
-    // bad practice, it's a temporay solution, we will fix later.
-    let _request_span_guard = request_span.enter();
-
-    let query_span = tracing::info_span!("Saving subscriber details to the database");
-    match sqlx::query!(
+pub async fn insert_subsciber(pool: &PgPool, form: &FormData) -> Result<(), sqlx::Error> {
+    sqlx::query!(
         r#"
         INSERT INTO subscriptions (id, email, name, subscribed_at)
         VALUES ($1, $2, $3, $4)
@@ -35,16 +35,16 @@ pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> Ht
         uuid::Uuid::new_v4(),
         form.email,
         form.name,
-        chrono::Utc::now()
+        Utc::now()
     )
-    .execute(pool.get_ref())
-    .instrument(query_span)
+    .execute(pool)
     .await
-    {
-        Ok(_) => HttpResponse::Ok().json(json!({ "message": "ok" })),
-        Err(e) => {
-            tracing::error!("failed to execute query: {:?}", e);
-            HttpResponse::InternalServerError().finish()
-        }
-    }
+    .map_err(|e| {
+        tracing::error!("failed to execute query: {:?}", e);
+        e
+    })?;
+    // Using the `?` operator to return early
+    // if the function failed, returning a sqlx::Error
+    // We will talk about error handling in depth later!
+    Ok(())
 }
