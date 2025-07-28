@@ -22,7 +22,7 @@ pub struct FormData {
 pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> HttpResponse {
     match insert_subsciber(&pool, &form).await {
         Ok(_) => HttpResponse::Ok().json(json!({ "message": "Thanks for subscribing!" })),
-        Err(_) => HttpResponse::InternalServerError().finish()
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e.to_string() }))
     }
 }
 
